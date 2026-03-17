@@ -1,73 +1,117 @@
 /**
  * tor-proxy.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Creates a Tor Hidden Service pointing to the local Express server.
+ * Connects to the local Tor control port and creates an ephemeral v3 hidden
+ * service that forwards  .onion:80  →  localhost:<PORT>.
  *
- * How it works:
- *   1. Connects to the Tor control port (9051) using granax.
- *   2. Adds an ephemeral onion service that forwards .onion:80 → localhost:3000.
- *   3. Prints the generated .onion address to the console.
+ * Usage (separate terminals):
+ *   Terminal 1 →  npm start
+ *   Terminal 2 →  npm run tor
  *
- * Requirements (local development only):
- *   - Tor must be installed and running with ControlPort 9051 enabled.
- *   - The Express app must already be running on port 3000.
+ * Usage (single terminal):
+ *   npm run start:tor
  *
- * Usage:
- *   npm run tor          # in a second terminal after 'npm start'
+ * Requirements:
+ *   • Tor installed and running  (ControlPort 9051, CookieAuthentication 0)
+ *   • granax installed           (npm install granax)
  */
 
 require('dotenv').config();
 
-// granax is an optional dependency — only needed locally with Tor installed.
+// ─── ANSI colour helpers (zero external deps) ─────────────────────────────────
+const c = {
+  reset:  '\x1b[0m',
+  bold:   '\x1b[1m',
+  dim:    '\x1b[2m',
+  green:  '\x1b[32m',
+  cyan:   '\x1b[36m',
+  yellow: '\x1b[33m',
+  red:    '\x1b[31m',
+  magenta:'\x1b[35m',
+};
+const log  = (icon, color, msg) => console.log(`${color}${c.bold}${icon}${c.reset}  ${msg}`);
+const info = (msg) => console.log(`${c.dim}   ${msg}${c.reset}`);
+const line = () => console.log(`${c.dim}${'─'.repeat(56)}${c.reset}`);
+
+// ─── Guard: granax must be installed ─────────────────────────────────────────
 let connect;
 try {
   connect = require('granax').connect;
 } catch {
-  console.error('\n❌  granax is not installed.');
-  console.error('    Install it locally with:  npm install granax');
-  console.error('    Then make sure Tor is running with ControlPort 9051 open.\n');
+  log('✖', c.red, `${c.bold}granax${c.reset} is not installed.`);
+  info('Run:  npm install granax');
   process.exit(1);
 }
 
-const LOCAL_PORT = process.env.PORT || 3000;
+// ─── Config ───────────────────────────────────────────────────────────────────
+const APP_PORT = process.env.PORT || 3000;
+const TOR_HOST = process.env.TOR_HOST || '127.0.0.1';
+const TOR_PORT = parseInt(process.env.TOR_CONTROL_PORT || '9051', 10);
 
-console.log('\n🧅  Initialising Tor hidden service...');
-console.log(`    Forwarding .onion:80 → localhost:${LOCAL_PORT}\n`);
+// ─── Banner ───────────────────────────────────────────────────────────────────
+console.log('');
+line();
+log('🧅', c.magenta, `${c.bold}Tor Hidden Service${c.reset} — Starting up`);
+info(`Control port : ${TOR_HOST}:${TOR_PORT}`);
+info(`Forwarding   : .onion:80  →  127.0.0.1:${APP_PORT}`);
+line();
+console.log('');
 
+// ─── Connect ──────────────────────────────────────────────────────────────────
 const tor = connect(
-  { host: '127.0.0.1', port: 9051 },
+  { host: TOR_HOST, port: TOR_PORT },
   { authOnConnect: false }
 );
 
 tor.on('error', (err) => {
-  console.error('❌  Tor controller error:', err.message);
-  console.error('    Make sure Tor is running with ControlPort 9051 open.');
+  log('✖', c.red, 'Tor controller error:');
+  info(err.message);
+  info('');
+  info('Make sure Tor is running and torrc contains:');
+  info('  ControlPort 9051');
+  info('  CookieAuthentication 0');
+  console.log('');
   process.exit(1);
 });
 
 tor.on('ready', () => {
-  // AddOnion creates a new ephemeral v3 hidden service
+  log('✔', c.green, 'Connected to Tor control port');
+  info('Creating ephemeral v3 hidden service…');
+  console.log('');
+
   tor.addOnion(
-    [{ virtPort: 80, target: `127.0.0.1:${LOCAL_PORT}` }],
+    [{ virtPort: 80, target: `127.0.0.1:${APP_PORT}` }],
     { keyType: 'NEW', keyBlob: 'BEST' },
     (err, result) => {
       if (err) {
-        console.error('❌  Failed to create onion service:', err.message);
+        log('✖', c.red, 'Failed to create onion service:');
+        info(err.message);
         process.exit(1);
       }
 
       const onionAddress = `${result.serviceId}.onion`;
-      console.log('✅  Tor hidden service is active!');
-      console.log(`🌐  Your .onion address: http://${onionAddress}`);
-      console.log('\n    Keep this terminal open to maintain the onion link.');
-      console.log('    Press Ctrl+C to remove the ephemeral hidden service.\n');
+
+      line();
+      log('🌐', c.cyan,  `${c.bold}Your onion link is ready!${c.reset}`);
+      console.log('');
+      console.log(`     ${c.green}${c.bold}http://${onionAddress}${c.reset}`);
+      console.log('');
+      info('Open the link above in Tor Browser to access your site.');
+      info('The address is ephemeral — it changes each restart.');
+      info('');
+      info('Press Ctrl+C to shut down the hidden service.');
+      line();
+      console.log('');
     }
   );
 });
 
-// Clean up on exit
+// ─── Graceful shutdown ────────────────────────────────────────────────────────
 process.on('SIGINT', () => {
-  console.log('\n🛑  Shutting down Tor hidden service...');
+  console.log('');
+  log('⏹', c.yellow, 'Shutting down hidden service…');
   tor.destroy();
+  log('✔', c.green, 'Done. Onion address is now unreachable.');
+  console.log('');
   process.exit(0);
 });
