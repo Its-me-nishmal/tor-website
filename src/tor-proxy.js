@@ -188,10 +188,11 @@ function createOnionService() {
       } else if (state === 'ADD_ONION') {
         if (line.includes('ServiceID=')) {
           const id = line.split('ServiceID=')[1].trim();
+          const onionAddr = `${id}.onion`;
           hr();
           log('🌐', c.cyan, `${c.bold}Onion link is live!${c.reset}`);
           console.log('');
-          console.log(`     ${c.green}${c.bold}http://${id}.onion${c.reset}`);
+          console.log(`     ${c.green}${c.bold}http://${onionAddr}${c.reset}`);
           console.log('');
           info('Open in Tor Browser to visit your site.');
           info('Link is ephemeral — changes on each restart.');
@@ -200,6 +201,8 @@ function createOnionService() {
           hr();
           console.log('');
           state = 'DONE';
+          // Tell the Express server so /api/info shows the live address
+          registerOnionAddress(onionAddr);
         } else if (code >= 500) {
           log('✖', c.red, `Failed: ${line}`);
           sock.destroy();
@@ -213,4 +216,24 @@ function createOnionService() {
     log('✖', c.red, `Control socket error: ${err.message}`);
     process.exit(1);
   });
+}
+
+// ─── Register onion address with the Express server ───────────────────────────
+function registerOnionAddress(address) {
+  const http = require('http');
+  const body = JSON.stringify({ address });
+  const req = http.request({
+    host: '127.0.0.1',
+    port: APP_PORT,
+    path: '/internal/onion',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+  }, (res) => {
+    if (res.statusCode === 200) {
+      info(`Onion address sent to Express server ✓`);
+    }
+  });
+  req.on('error', () => {}); // non-fatal
+  req.write(body);
+  req.end();
 }
