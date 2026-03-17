@@ -17,7 +17,17 @@
  */
 
 require('dotenv').config();
-const { connect } = require('granax');
+
+// granax is an optional dependency — only needed locally with Tor installed.
+let connect;
+try {
+  connect = require('granax').connect;
+} catch {
+  console.error('\n❌  granax is not installed.');
+  console.error('    Install it locally with:  npm install granax');
+  console.error('    Then make sure Tor is running with ControlPort 9051 open.\n');
+  process.exit(1);
+}
 
 const LOCAL_PORT = process.env.PORT || 3000;
 
