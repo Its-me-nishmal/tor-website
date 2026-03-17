@@ -3,79 +3,399 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World · Tor Node Server</title>
-  <meta name="description" content="A simple Node.js Hello World server accessible via Tor onion link and Render.com." />
+  <title>Muhammad Nishmal P — Full-Stack Developer · Tor Hidden Service</title>
+  <meta name="description" content="Muhammad Nishmal P — Full-Stack Developer specializing in cloud infrastructure, AI agents, and high-performance automation. Available via Tor hidden service." />
+  <meta name="keywords" content="Muhammad Nishmal, Full-Stack Developer, Tor, Hidden Service, Node.js, Next.js, AI Automation" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- Animated background particles -->
+  <!-- Animated background -->
   <div class="bg-particles" id="particles"></div>
+  <div class="bg-grid"></div>
 
-  <div class="container">
-
-    <!-- Header Badge -->
-    <div class="badge" id="onion-badge">
-      <span class="badge-dot"></span>
-      <span class="badge-text">Tor Hidden Service Active</span>
+  <!-- ─── NAV ──────────────────────────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#hero" class="nav-logo" id="nav-logo">
+        <span class="logo-bracket">&lt;</span>nishmal<span class="logo-bracket">/&gt;</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#about" id="nav-about">About</a></li>
+        <li><a href="#projects" id="nav-projects">Projects</a></li>
+        <li><a href="#experience" id="nav-experience">Experience</a></li>
+        <li><a href="#tor" id="nav-tor">Tor Node</a></li>
+        <li><a href="#contact" id="nav-contact">Contact</a></li>
+      </ul>
+      <!-- Tor badge -->
+      <div class="tor-badge" id="tor-badge">
+        <span class="badge-dot" id="badge-dot"></span>
+        <span class="badge-text">Tor Active</span>
+      </div>
     </div>
+  </nav>
 
-    <!-- Hero Section -->
-    <div class="hero">
-      <div class="onion-icon">🧅</div>
-      <h1 class="title">Hello, <span class="gradient-text">World!</span></h1>
-      <p class="subtitle">
-        A Node.js server running on <strong>Render.com</strong> — accessible over the clearnet <em>and</em> the Tor network.
+  <!-- ─── HERO ──────────────────────────────────────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-inner container">
+      <p class="hero-label" id="hero-label">
+        <span class="label-onion">🧅</span> Available on Tor · <span class="onion-addr" id="onion-addr-hero">Connecting…</span>
       </p>
+      <h1 class="hero-title" id="hero-title">
+        Building <span class="gradient-text">reliable</span><br />backend systems.
+      </h1>
+      <p class="hero-sub" id="hero-sub">
+        I am <strong>Muhammad Nishmal P</strong> — a Full-Stack Developer specialising in
+        <em>cloud infrastructure</em>, <em>AI agents</em>, and <em>high-performance automation</em>.
+      </p>
+      <div class="hero-cta" id="hero-cta">
+        <a href="#projects" class="btn btn-primary" id="btn-work">View Work</a>
+        <a href="https://github.com/Its-me-nishmal" target="_blank" rel="noopener" class="btn btn-ghost" id="btn-github">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+        <a href="https://nichu.dev" target="_blank" rel="noopener" class="btn btn-ghost" id="btn-portfolio">
+          🌍 nichu.dev
+        </a>
+      </div>
     </div>
+    <div class="scroll-hint" id="scroll-hint">
+      <div class="scroll-line"></div>
+    </div>
+  </section>
 
-    <!-- Info Cards -->
-    <div class="cards">
-
-      <div class="card" id="card-server">
-        <div class="card-icon">⚡</div>
-        <div class="card-content">
-          <h3>Express Server</h3>
-          <p>Lightweight Node.js + Express backend — fast, minimal, and production-ready on Render.com.</p>
+  <!-- ─── ABOUT ─────────────────────────────────────────────────────────────── -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">01 · About</span>
+        <h2 class="section-title">Who I am</h2>
+      </div>
+      <div class="about-grid">
+        <div class="about-text" id="about-text">
+          <p>
+            I am a Full-Stack Developer with a <strong>backend-first mindset</strong>. My focus is not just on writing code,
+            but on building reliable, scalable systems that solve real-world problems.
+          </p>
+          <p>
+            From architecting cloud infrastructure to implementing AI-assisted automation, I prioritise
+            <em>clarity</em>, <em>performance</em>, and <em>long-term maintainability</em>. I have deployed multiple
+            production applications and enjoy tackling complex challenges in distributed systems and data processing.
+          </p>
+          <p>
+            I leverage AI not just for code generation, but as a core part of my engineering workflow — a methodology I call
+            <strong>"Vibe Coding"</strong>. This allows me to execute complex system designs faster and with higher reliability.
+          </p>
+        </div>
+        <div class="skills-grid" id="skills-grid">
+          <div class="skill-category" id="skill-frontend">
+            <h4>Frontend</h4>
+            <div class="skill-pills">
+              <span class="pill">Next.js</span><span class="pill">React</span><span class="pill">TypeScript</span><span class="pill">HTML/CSS</span>
+            </div>
+          </div>
+          <div class="skill-category" id="skill-backend">
+            <h4>Backend</h4>
+            <div class="skill-pills">
+              <span class="pill">Node.js</span><span class="pill">Express</span><span class="pill">REST APIs</span><span class="pill">Socket.io</span>
+            </div>
+          </div>
+          <div class="skill-category" id="skill-db">
+            <h4>Databases</h4>
+            <div class="skill-pills">
+              <span class="pill">MongoDB</span><span class="pill">PostgreSQL</span><span class="pill">Redis</span>
+            </div>
+          </div>
+          <div class="skill-category" id="skill-cloud">
+            <h4>Cloud &amp; DevOps</h4>
+            <div class="skill-pills">
+              <span class="pill">Docker</span><span class="pill">Render</span><span class="pill">Vercel</span><span class="pill">VPS</span>
+            </div>
+          </div>
+          <div class="skill-category" id="skill-ai">
+            <h4>AI &amp; Automation</h4>
+            <div class="skill-pills">
+              <span class="pill">Gemini API</span><span class="pill">LLM Agents</span><span class="pill">Baileys</span><span class="pill">Workflow</span>
+            </div>
+          </div>
+          <div class="skill-category" id="skill-tools">
+            <h4>Tools</h4>
+            <div class="skill-pills">
+              <span class="pill">Git</span><span class="pill">Tor</span><span class="pill">Nginx</span><span class="pill">Postman</span>
+            </div>
+          </div>
         </div>
       </div>
-
-      <div class="card" id="card-tor">
-        <div class="card-icon">🌐</div>
-        <div class="card-content">
-          <h3>Tor Onion Link</h3>
-          <p>Runs a v3 .onion hidden service via the Tor control protocol. Privacy-first by design.</p>
-        </div>
-      </div>
-
-      <div class="card" id="card-api">
-        <div class="card-icon">🔌</div>
-        <div class="card-content">
-          <h3>REST API</h3>
-          <p>Hit <code>/api/info</code> to get live server info — onion address, uptime, and timestamp.</p>
-        </div>
-      </div>
-
     </div>
+  </section>
 
-    <!-- Live API Response -->
-    <div class="api-panel">
-      <div class="api-panel-header">
-        <span class="api-label">GET</span>
-        <span class="api-url">/api/info</span>
-        <button class="refresh-btn" id="refresh-btn" onclick="fetchInfo()">↻ Refresh</button>
+  <!-- ─── PROJECTS ──────────────────────────────────────────────────────────── -->
+  <section class="section section-alt" id="projects">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">02 · Selected Work</span>
+        <h2 class="section-title">Projects</h2>
+        <p class="section-desc">A diverse collection of projects ranging from production web apps to complex automation bots.</p>
       </div>
-      <pre class="api-response" id="api-response">Loading...</pre>
+      <div class="projects-grid" id="projects-grid">
+
+        <div class="project-card" id="proj-nuswally">
+          <div class="project-top">
+            <span class="project-emoji">🕌</span>
+            <div class="project-links">
+              <a href="https://github.com/Its-me-nishmal" target="_blank" rel="noopener" class="project-link" id="link-nuswally">↗</a>
+            </div>
+          </div>
+          <h3>Nuswally Lillah</h3>
+          <p>Production-ready Islamic PWA featuring a digital library, prayer times, and offline capabilities.</p>
+          <ul class="project-features">
+            <li>Offline-first architecture with Service Workers</li>
+            <li>PDF rendering engine for 70+ books</li>
+            <li>Real-time prayer calculation &amp; location services</li>
+          </ul>
+          <div class="project-tags">
+            <span class="tag">PWA</span><span class="tag">Next.js</span><span class="tag">Service Workers</span>
+          </div>
+        </div>
+
+        <div class="project-card featured" id="proj-ai-qa">
+          <div class="project-top">
+            <span class="project-emoji">🤖</span>
+            <div class="project-links">
+              <a href="https://github.com/Its-me-nishmal" target="_blank" rel="noopener" class="project-link" id="link-ai-qa">↗</a>
+            </div>
+          </div>
+          <h3>fun (AI Q&amp;A)</h3>
+          <p>Advanced AI Q&amp;A generator capable of context-aware responses and intelligent query processing.</p>
+          <ul class="project-features">
+            <li>Integration with Large Language Models</li>
+            <li>Context-aware query handling</li>
+            <li>Optimised latency for real-time interactions</li>
+          </ul>
+          <div class="project-tags">
+            <span class="tag">AI</span><span class="tag">LLM</span><span class="tag">Node.js</span>
+          </div>
+        </div>
+
+        <div class="project-card" id="proj-ozole">
+          <div class="project-top">
+            <span class="project-emoji">⚡</span>
+            <div class="project-links">
+              <a href="https://github.com/Its-me-nishmal" target="_blank" rel="noopener" class="project-link" id="link-ozole">↗</a>
+            </div>
+          </div>
+          <h3>ozole_bot</h3>
+          <p>High-concurrency automation bot for WhatsApp and Telegram group management.</p>
+          <ul class="project-features">
+            <li>Automated moderation and user management</li>
+            <li>Media processing pipelines</li>
+            <li>Handles high-volume message streams</li>
+          </ul>
+          <div class="project-tags">
+            <span class="tag">WhatsApp</span><span class="tag">Telegram</span><span class="tag">Automation</span>
+          </div>
+        </div>
+
+        <div class="project-card featured" id="proj-wa">
+          <div class="project-top">
+            <span class="project-emoji">💬</span>
+            <div class="project-links">
+              <a href="https://github.com/Its-me-nishmal" target="_blank" rel="noopener" class="project-link" id="link-wa">↗</a>
+            </div>
+          </div>
+          <h3>WhatsApp Automation</h3>
+          <p>Custom automation tools leveraging the Baileys library for efficient message handling at scale.</p>
+          <ul class="project-features">
+            <li>Automated workflows and responses</li>
+            <li>Robust session management</li>
+            <li>Scalable, production-ready architecture</li>
+          </ul>
+          <div class="project-tags">
+            <span class="tag">Baileys</span><span class="tag">Node.js</span><span class="tag">Scalable</span>
+          </div>
+        </div>
+
+        <!-- THIS project — Tor Web Hosting -->
+        <div class="project-card tor-project" id="proj-tor">
+          <div class="project-top">
+            <span class="project-emoji">🧅</span>
+            <div class="project-links">
+              <a href="https://github.com/Its-me-nishmal/tor-website" target="_blank" rel="noopener" class="project-link" id="link-tor">↗</a>
+            </div>
+          </div>
+          <h3>Tor Hidden Service <span class="live-badge">LIVE</span></h3>
+          <p>This very page — a Node.js portfolio server running on Render.com and tunnelled through the Tor network as a v3 .onion hidden service.</p>
+          <ul class="project-features">
+            <li>v3 .onion address via Tor control protocol</li>
+            <li>Dual-access: clearnet + dark web</li>
+            <li>Live server info API at <code>/api/info</code></li>
+          </ul>
+          <div class="project-tags">
+            <span class="tag">Tor</span><span class="tag">Node.js</span><span class="tag">Docker</span><span class="tag">Render</span>
+          </div>
+        </div>
+
+      </div>
     </div>
+  </section>
 
-  </div>
+  <!-- ─── EXPERIENCE ────────────────────────────────────────────────────────── -->
+  <section class="section" id="experience">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">03 · Experience</span>
+        <h2 class="section-title">Where I've worked</h2>
+      </div>
+      <div class="timeline" id="timeline">
 
-  <!-- Footer -->
-  <footer class="footer">
-    <p>Built with Node.js · Hosted on Render.com · Tunnelled via Tor</p>
+        <div class="timeline-item" id="exp-fullstack">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <h3>Full-Stack Developer</h3>
+              <span class="timeline-period">Current</span>
+            </div>
+            <ul class="timeline-points">
+              <li>Architected and deployed scalable web applications using Next.js, managing end-to-end development cycles.</li>
+              <li>Developed custom automation bots for Telegram and WhatsApp using Node.js, processing high volumes of data.</li>
+              <li>Implemented AI-assisted workflows to accelerate development speed and improve code quality.</li>
+              <li>Managed cloud infrastructure and deployments on Vercel and VPS environments.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item" id="exp-backend">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <h3>Backend Developer</h3>
+              <span class="timeline-period">Prior</span>
+            </div>
+            <ul class="timeline-points">
+              <li>Contributed to backend systems focusing on API performance and reliability.</li>
+              <li>Built and maintained RESTful APIs using Node.js and Express.</li>
+              <li>Collaborated with community members to fix bugs and implement new features.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item" id="exp-opensource">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <h3>Open Source &amp; AI-Assisted Dev</h3>
+              <span class="timeline-period">Ongoing</span>
+            </div>
+            <ul class="timeline-points">
+              <li>GitHub is home to various experiments, automation bots, and utility libraries.</li>
+              <li>Uses AI ("Vibe Coding") for accelerated execution, better system design, and reliable outputs.</li>
+              <li>Rigorous testing and verification loops ensure AI-generated code meets production standards.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TOR NODE ──────────────────────────────────────────────────────────── -->
+  <section class="section section-alt" id="tor">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">04 · Tor Node</span>
+        <h2 class="section-title">Live Hidden Service</h2>
+        <p class="section-desc">This server is running as a Tor hidden service. Connect from Tor Browser using the .onion address below.</p>
+      </div>
+
+      <div class="tor-panel" id="tor-panel">
+
+        <div class="tor-info-grid">
+          <div class="tor-info-card" id="info-onion">
+            <div class="tor-info-icon">🧅</div>
+            <div class="tor-info-body">
+              <span class="tor-info-label">Onion Address</span>
+              <code class="tor-info-value onion-addr" id="onion-addr-display">Connecting to Tor…</code>
+            </div>
+          </div>
+          <div class="tor-info-card" id="info-uptime">
+            <div class="tor-info-icon">⏱</div>
+            <div class="tor-info-body">
+              <span class="tor-info-label">Server Uptime</span>
+              <code class="tor-info-value" id="uptime-display">—</code>
+            </div>
+          </div>
+          <div class="tor-info-card" id="info-ts">
+            <div class="tor-info-icon">🕒</div>
+            <div class="tor-info-body">
+              <span class="tor-info-label">Server Time</span>
+              <code class="tor-info-value" id="timestamp-display">—</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live API panel -->
+        <div class="api-panel" id="api-panel">
+          <div class="api-panel-header">
+            <span class="api-label">GET</span>
+            <span class="api-url">/api/info</span>
+            <button class="refresh-btn" id="refresh-btn" onclick="fetchInfo()">↻ Refresh</button>
+          </div>
+          <pre class="api-response" id="api-response">Loading…</pre>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CONTACT ───────────────────────────────────────────────────────────── -->
+  <section class="section" id="contact">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">05 · Contact</span>
+        <h2 class="section-title">Get in touch</h2>
+        <p class="section-desc">Have an interesting project or just want to connect? I'm always open to new opportunities.</p>
+      </div>
+      <div class="contact-grid" id="contact-grid">
+        <a href="mailto:contact@nichu.dev" class="contact-card" id="contact-email">
+          <span class="contact-icon">✉️</span>
+          <div class="contact-body">
+            <h4>Email</h4>
+            <p>contact@nichu.dev</p>
+          </div>
+          <span class="contact-arrow">↗</span>
+        </a>
+        <a href="https://github.com/Its-me-nishmal" target="_blank" rel="noopener" class="contact-card" id="contact-github">
+          <span class="contact-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          </span>
+          <div class="contact-body">
+            <h4>GitHub</h4>
+            <p>Its-me-nishmal</p>
+          </div>
+          <span class="contact-arrow">↗</span>
+        </a>
+        <a href="https://nichu.dev" target="_blank" rel="noopener" class="contact-card" id="contact-portfolio">
+          <span class="contact-icon">🌍</span>
+          <div class="contact-body">
+            <h4>Portfolio</h4>
+            <p>nichu.dev</p>
+          </div>
+          <span class="contact-arrow">↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────────────────────── -->
+  <footer class="footer" id="footer">
+    <div class="footer-inner">
+      <p class="footer-brand">Muhammad Nishmal P</p>
+      <p class="footer-sub">Full-Stack Developer · Available via Tor &amp; Clearnet · <code id="footer-onion">…</code></p>
+      <p class="footer-copy">Built with Node.js · Hosted on Render.com · Tunnelled via Tor · <a href="https://nichu.dev" target="_blank" rel="noopener">nichu.dev</a></p>
+    </div>
   </footer>
 
   <script src="app.js"></script>

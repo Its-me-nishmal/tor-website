@@ -15,9 +15,9 @@
 
 require('dotenv').config();
 const { spawn } = require('child_process');
-const net  = require('net');
-const os   = require('os');
-const fs   = require('fs');
+const net = require('net');
+const os = require('os');
+const fs = require('fs');
 const path = require('path');
 
 // ─── ANSI colours ─────────────────────────────────────────────────────────────
@@ -26,17 +26,17 @@ const c = {
   green: '\x1b[32m', cyan: '\x1b[36m', yellow: '\x1b[33m',
   red: '\x1b[31m', magenta: '\x1b[35m',
 };
-const log  = (icon, col, msg) => console.log(`  ${col}${c.bold}${icon}${c.reset}  ${msg}`);
-const info = (msg)             => console.log(`     ${c.dim}${msg}${c.reset}`);
-const hr   = ()                => console.log(`  ${c.dim}${'─'.repeat(54)}${c.reset}`);
+const log = (icon, col, msg) => console.log(`  ${col}${c.bold}${icon}${c.reset}  ${msg}`);
+const info = (msg) => console.log(`     ${c.dim}${msg}${c.reset}`);
+const hr = () => console.log(`  ${c.dim}${'─'.repeat(54)}${c.reset}`);
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const APP_PORT      = parseInt(process.env.PORT             || '3000', 10);
+const APP_PORT = parseInt(process.env.PORT || '3000', 10);
 const TOR_CTRL_PORT = parseInt(process.env.TOR_CONTROL_PORT || '9051', 10);
-const TOR_BINARY    = process.env.TOR_PATH || 'tor';
+const TOR_BINARY = process.env.TOR_PATH || 'tor';
 
 // ─── Temp paths ───────────────────────────────────────────────────────────────
-const dataDir   = path.join(os.tmpdir(), 'tor-hello-data');
+const dataDir = path.join(os.tmpdir(), 'tor-hello-data');
 const torrcPath = path.join(os.tmpdir(), 'tor-hello.torrc');
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ torProc.stderr.on('data', (d) => checkBootstrap(d.toString()));
 // ─── Create hidden service via Tor control protocol ──────────────────────────
 function createOnion() {
   let state = 'AUTH';
-  let buf   = '';
+  let buf = '';
 
   const sock = new net.Socket();
   sock.connect(TOR_CTRL_PORT, '127.0.0.1', () => {
@@ -119,7 +119,7 @@ function createOnion() {
 
       } else if (state === 'ADD_ONION') {
         if (line.includes('ServiceID=')) {
-          const id   = line.split('ServiceID=')[1].trim();
+          const id = line.split('ServiceID=')[1].trim();
           const addr = `${id}.onion`;
           state = 'DONE';
 
@@ -153,7 +153,7 @@ process.on('SIGINT', () => {
   console.log('');
   log('⏹', c.yellow, 'Shutting down…');
   torProc.kill();
-  try { fs.unlinkSync(torrcPath); } catch {}
+  try { fs.unlinkSync(torrcPath); } catch { }
   log('✔', c.green, 'Done.');
   console.log('');
   process.exit(0);
