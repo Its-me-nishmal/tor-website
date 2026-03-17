@@ -1,166 +1,190 @@
 /**
  * tor-proxy.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Creates a Tor v3 hidden service using the raw Tor control protocol over a
- * plain TCP socket — NO external dependencies, only Node built-ins.
+ * ONE command does everything:
  *
- * How to use
- * ──────────
- *  Option A — two terminals:
- *    Terminal 1 →  npm start
- *    Terminal 2 →  npm run tor
+ *   npm run tor
  *
- *  Option B — one terminal:
- *    npm run start:tor
+ * What it does:
+ *   1. Spawns the `tor` binary as a child process (uses a temp torrc)
+ *   2. Waits for Tor to fully bootstrap (100%)
+ *   3. Connects to the control port via raw TCP
+ *   4. Creates an ephemeral v3 hidden service
+ *   5. Prints your .onion address in the terminal
  *
- * Tor requirements (torrc)
- * ────────────────────────
- *    ControlPort 9051
- *    CookieAuthentication 0
+ * Requirements:
+ *   • Express server already running:  npm start   (in another terminal)
+ *   • `tor` binary on your PATH
+ *       Windows  → download Tor Expert Bundle from https://www.torproject.org/download/tor/
+ *                  extract and add the folder to PATH, or set TOR_PATH env var
+ *       Linux    → sudo apt install tor
+ *       macOS    → brew install tor
  */
 
 require('dotenv').config();
-const net = require('net');
+const { spawn } = require('child_process');
+const net       = require('net');
+const os        = require('os');
+const fs        = require('fs');
+const path      = require('path');
 
-// ─── ANSI colour helpers (zero external deps) ─────────────────────────────────
+// ─── ANSI colours (zero deps) ─────────────────────────────────────────────────
 const c = {
-  reset:   '\x1b[0m',
-  bold:    '\x1b[1m',
-  dim:     '\x1b[2m',
-  green:   '\x1b[32m',
-  cyan:    '\x1b[36m',
-  yellow:  '\x1b[33m',
-  red:     '\x1b[31m',
-  magenta: '\x1b[35m',
+  reset:   '\x1b[0m', bold:  '\x1b[1m', dim:   '\x1b[2m',
+  green:   '\x1b[32m', cyan: '\x1b[36m', yellow:'\x1b[33m',
+  red:     '\x1b[31m', magenta:'\x1b[35m',
 };
-const log  = (icon, color, msg) => console.log(`  ${color}${c.bold}${icon}${c.reset}  ${msg}`);
-const info = (msg) => console.log(`     ${c.dim}${msg}${c.reset}`);
-const line = () => console.log(`  ${c.dim}${'─'.repeat(54)}${c.reset}`);
+const log  = (icon, col, msg) => console.log(`  ${col}${c.bold}${icon}${c.reset}  ${msg}`);
+const info = (msg)             => console.log(`     ${c.dim}${msg}${c.reset}`);
+const hr   = ()                => console.log(`  ${c.dim}${'─'.repeat(54)}${c.reset}`);
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const APP_PORT     = process.env.PORT             || 3000;
-const TOR_HOST     = process.env.TOR_HOST         || '127.0.0.1';
+const APP_PORT      = process.env.PORT             || 3000;
 const TOR_CTRL_PORT = parseInt(process.env.TOR_CONTROL_PORT || '9051', 10);
+const TOR_BINARY    = process.env.TOR_PATH || 'tor';   // override if not in PATH
+
+// ─── Write a temp torrc ───────────────────────────────────────────────────────
+const dataDir = path.join(os.tmpdir(), 'tor-hello-world-data');
+const torrcPath = path.join(os.tmpdir(), 'tor-hello-world.torrc');
+fs.mkdirSync(dataDir, { recursive: true });
+fs.writeFileSync(torrcPath, [
+  `ControlPort ${TOR_CTRL_PORT}`,
+  'CookieAuthentication 0',
+  `DataDirectory ${dataDir}`,
+  'Log notice stdout',
+].join('\n'));
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
 console.log('');
-line();
+hr();
 log('🧅', c.magenta, `${c.bold}Tor Hidden Service${c.reset}`);
-info(`Control  →  ${TOR_HOST}:${TOR_CTRL_PORT}`);
-info(`Forward  →  .onion:80  ⟶  127.0.0.1:${APP_PORT}`);
-line();
+info(`App port : ${APP_PORT}`);
+info(`Tor ctrl : 127.0.0.1:${TOR_CTRL_PORT}`);
+hr();
+console.log('');
+log('⏳', c.yellow, 'Starting Tor… (this takes ~20 seconds first run)');
 console.log('');
 
-// ─── Tor Control Protocol (raw TCP) ──────────────────────────────────────────
-// Simple state machine: AUTHENTICATE → ADD_ONION → DONE
-const STATE = { AUTH: 'AUTH', ADD_ONION: 'ADD_ONION', DONE: 'DONE' };
-let state  = STATE.AUTH;
-let buffer = '';
+// ─── Spawn Tor ────────────────────────────────────────────────────────────────
+const torProc = spawn(TOR_BINARY, ['-f', torrcPath], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-const socket = new net.Socket();
-
-socket.connect(TOR_CTRL_PORT, TOR_HOST, () => {
-  log('✔', c.green, 'Connected to Tor control port');
-  info('Authenticating…');
-  socket.write('AUTHENTICATE\r\n');
-});
-
-socket.on('data', (chunk) => {
-  buffer += chunk.toString();
-
-  // Process all complete lines in the buffer
-  const lines = buffer.split('\r\n');
-  buffer = lines.pop(); // keep incomplete tail
-
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    handleLine(line.trim());
-  }
-});
-
-function handleLine(line) {
-  // Tor replies start with a 3-digit code: "250 OK", "250+...", "552 ..."
-  const code = line.slice(0, 3);
-
-  if (state === STATE.AUTH) {
-    if (code === '250') {
-      log('✔', c.green, 'Authenticated');
-      info('Creating ephemeral v3 hidden service…');
-      console.log('');
-      // ADD_ONION: new v3 key, port 80 → local app port
-      socket.write(`ADD_ONION NEW:ED25519-V3 Port=80,127.0.0.1:${APP_PORT}\r\n`);
-      state = STATE.ADD_ONION;
-    } else {
-      fatal(`Authentication failed: ${line}`);
-    }
-    return;
-  }
-
-  if (state === STATE.ADD_ONION) {
-    // Lines like:  250-ServiceID=abc123xyz
-    if (line.startsWith('250-ServiceID=') || line.startsWith('250 ServiceID=')) {
-      const serviceId = line.split('=')[1].trim();
-      const onionAddr = `${serviceId}.onion`;
-
-      line_();
-      log('🌐', c.cyan, `${c.bold}Your onion link is ready!${c.reset}`);
-      console.log('');
-      console.log(`     ${c.green}${c.bold}http://${onionAddr}${c.reset}`);
-      console.log('');
-      info('Open in Tor Browser to visit your site.');
-      info('Address is ephemeral — changes on each restart.');
-      info('');
-      info('Press Ctrl+C to shut down.');
-      line_();
-      console.log('');
-      state = STATE.DONE;
-    } else if (code === '250') {
-      // "250 OK" final line — response complete without ServiceID parsed (shouldn't happen)
-      // ignore
-    } else if (parseInt(code, 10) >= 500) {
-      fatal(`Failed to create hidden service: ${line}`);
-    }
-    return;
-  }
-}
-
-socket.on('error', (err) => {
-  console.log('');
-  log('✖', c.red, 'Cannot connect to Tor control port:');
-  info(err.message);
+torProc.on('error', (err) => {
+  log('✖', c.red, '`tor` binary not found.');
   info('');
-  info('Make sure Tor is running and torrc contains:');
-  info('  ControlPort 9051');
-  info('  CookieAuthentication 0');
+  info('Install Tor and make sure it is on your PATH:');
+  info('  Windows → https://www.torproject.org/download/tor/');
+  info('            extract, then add the folder to your PATH');
+  info('            or set:  TOR_PATH=C:\\path\\to\\tor.exe');
+  info('  Linux   → sudo apt install tor');
+  info('  macOS   → brew install tor');
   console.log('');
   process.exit(1);
 });
 
-socket.on('close', () => {
-  if (state !== STATE.DONE) {
+let bootstrapped = false;
+
+// Watch stdout for the "Bootstrapped 100%" line
+torProc.stdout.on('data', (chunk) => {
+  const text = chunk.toString();
+
+  // Uncomment to see all Tor log output:
+  // process.stdout.write(`  ${c.dim}[tor] ${text}${c.reset}`);
+
+  if (!bootstrapped && text.includes('Bootstrapped 100%')) {
+    bootstrapped = true;
+    log('✔', c.green, 'Tor bootstrapped — connecting to control port…');
     console.log('');
-    log('✖', c.red, 'Tor control port connection closed unexpectedly.');
-    process.exit(1);
+    createOnionService();
   }
 });
+
+torProc.stderr.on('data', (chunk) => {
+  const text = chunk.toString();
+  if (!bootstrapped && text.includes('Bootstrapped 100%')) {
+    bootstrapped = true;
+    log('✔', c.green, 'Tor bootstrapped — connecting to control port…');
+    console.log('');
+    createOnionService();
+  }
+});
+
+// ─── Create the hidden service once Tor is ready ──────────────────────────────
+function createOnionService() {
+  const STATE = { AUTH: 'AUTH', ADD_ONION: 'ADD_ONION', DONE: 'DONE' };
+  let state  = STATE.AUTH;
+  let buf    = '';
+
+  const socket = new net.Socket();
+
+  socket.connect(TOR_CTRL_PORT, '127.0.0.1', () => {
+    socket.write('AUTHENTICATE\r\n');
+  });
+
+  socket.on('data', (chunk) => {
+    buf += chunk.toString();
+    const lines = buf.split('\r\n');
+    buf = lines.pop();
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const code = line.slice(0, 3);
+
+      if (state === STATE.AUTH) {
+        if (code === '250') {
+          socket.write(`ADD_ONION NEW:ED25519-V3 Port=80,127.0.0.1:${APP_PORT}\r\n`);
+          state = STATE.ADD_ONION;
+        } else {
+          fatal(socket, `Auth failed: ${line}`);
+        }
+
+      } else if (state === STATE.ADD_ONION) {
+        if (line.includes('ServiceID=')) {
+          const serviceId = line.split('ServiceID=')[1].trim();
+          const onionAddr = `${serviceId}.onion`;
+
+          hr();
+          log('🌐', c.cyan, `${c.bold}Your onion link is ready!${c.reset}`);
+          console.log('');
+          console.log(`     ${c.green}${c.bold}http://${onionAddr}${c.reset}`);
+          console.log('');
+          info('Open the link above in Tor Browser.');
+          info('Address is ephemeral — changes on each restart.');
+          info('');
+          info('Press Ctrl+C to stop.');
+          hr();
+          console.log('');
+          state = STATE.DONE;
+        } else if (parseInt(code, 10) >= 500) {
+          fatal(socket, `Failed to create service: ${line}`);
+        }
+      }
+    }
+  });
+
+  socket.on('error', (err) => {
+    log('✖', c.red, `Control port error: ${err.message}`);
+    process.exit(1);
+  });
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function line_() { console.log(`  ${c.dim}${'─'.repeat(54)}${c.reset}`); }
-
-function fatal(msg) {
-  console.log('');
+function fatal(socket, msg) {
   log('✖', c.red, msg);
   socket.destroy();
+  cleanup();
   process.exit(1);
 }
 
-// ─── Graceful shutdown ────────────────────────────────────────────────────────
+function cleanup() {
+  torProc.kill();
+  try { fs.unlinkSync(torrcPath); } catch {}
+}
+
 process.on('SIGINT', () => {
   console.log('');
-  log('⏹', c.yellow, 'Shutting down hidden service…');
-  // DEL_ONION is only needed for non-detached services; just close the socket
-  socket.destroy();
-  log('✔', c.green, 'Done — onion address is now offline.');
+  log('⏹', c.yellow, 'Shutting down…');
+  cleanup();
+  log('✔', c.green, 'Done.');
   console.log('');
   process.exit(0);
 });
