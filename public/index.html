@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hello World · Tor Node Server</title>
+  <meta name="description" content="A simple Node.js Hello World server accessible via Tor onion link and Render.com." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Animated background particles -->
+  <div class="bg-particles" id="particles"></div>
+
+  <div class="container">
+
+    <!-- Header Badge -->
+    <div class="badge" id="onion-badge">
+      <span class="badge-dot"></span>
+      <span class="badge-text">Tor Hidden Service Active</span>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+      <div class="onion-icon">🧅</div>
+      <h1 class="title">Hello, <span class="gradient-text">World!</span></h1>
+      <p class="subtitle">
+        A Node.js server running on <strong>Render.com</strong> — accessible over the clearnet <em>and</em> the Tor network.
+      </p>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="cards">
+
+      <div class="card" id="card-server">
+        <div class="card-icon">⚡</div>
+        <div class="card-content">
+          <h3>Express Server</h3>
+          <p>Lightweight Node.js + Express backend — fast, minimal, and production-ready on Render.com.</p>
+        </div>
+      </div>
+
+      <div class="card" id="card-tor">
+        <div class="card-icon">🌐</div>
+        <div class="card-content">
+          <h3>Tor Onion Link</h3>
+          <p>Runs a v3 .onion hidden service via the Tor control protocol. Privacy-first by design.</p>
+        </div>
+      </div>
+
+      <div class="card" id="card-api">
+        <div class="card-icon">🔌</div>
+        <div class="card-content">
+          <h3>REST API</h3>
+          <p>Hit <code>/api/info</code> to get live server info — onion address, uptime, and timestamp.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Live API Response -->
+    <div class="api-panel">
+      <div class="api-panel-header">
+        <span class="api-label">GET</span>
+        <span class="api-url">/api/info</span>
+        <button class="refresh-btn" id="refresh-btn" onclick="fetchInfo()">↻ Refresh</button>
+      </div>
+      <pre class="api-response" id="api-response">Loading...</pre>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Built with Node.js · Hosted on Render.com · Tunnelled via Tor</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

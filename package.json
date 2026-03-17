@@ -1,0 +1,22 @@
+{
+  "name": "tor-hello-world",
+  "version": "1.0.0",
+  "description": "A simple Node.js Hello World server hosted on Render.com with Tor onion link support",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "tor": "node src/tor-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "granax": "^3.1.4",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
