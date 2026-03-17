@@ -55,52 +55,102 @@ console.log('');
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 if (DOCKER_MODE) {
-  // Tor already running — just wait for control port to be ready
   log('⏳', c.yellow, 'Waiting for Tor control port…');
-  pollControlPort();
+  connectAndCreateOnion(0);
 } else {
-  // Local mode — spawn Tor ourselves
   startLocalTor();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DOCKER MODE: poll until Tor control port accepts connections
+// DOCKER MODE: single socket — try to auth+create directly, retry on failure
+// No probe socket, no destroy() loops possible.
 // ═══════════════════════════════════════════════════════════════════════════════
-let _onionCreated = false; // one-shot guard
-
-function pollControlPort(attempts = 0) {
-  const MAX = 40; // 40 × 2s = 80s timeout
+function connectAndCreateOnion(attempts) {
+  const MAX = 40;
   if (attempts >= MAX) {
     log('✖', c.red, 'Timed out waiting for Tor to start.');
     process.exit(1);
   }
 
-  const probe = new net.Socket();
-  probe.setTimeout(1500);
+  let state = 'CONNECTING';
+  let buf   = '';
 
-  probe.connect(TOR_CTRL_PORT, '127.0.0.1', () => {
-    // Remove all listeners BEFORE destroying — otherwise destroy() fires 'error'
-    probe.removeAllListeners();
-    probe.destroy();
+  const sock = new net.Socket();
+  sock.setTimeout(3000);
 
-    if (_onionCreated) return; // already started, ignore duplicate callbacks
-    _onionCreated = true;
-
-    log('✔', c.green, 'Tor is ready — creating hidden service…');
-    console.log('');
-    createOnionService();
+  sock.connect(TOR_CTRL_PORT, '127.0.0.1', () => {
+    state = 'AUTH';
+    sock.setTimeout(0); // cancel connect timeout once connected
+    sock.write('AUTHENTICATE\r\n');
   });
 
-  probe.on('error', () => {
-    probe.removeAllListeners();
-    probe.destroy();
-    setTimeout(() => pollControlPort(attempts + 1), 2000);
+  sock.on('data', (chunk) => {
+    buf += chunk.toString();
+    const lines = buf.split('\r\n');
+    buf = lines.pop();
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const code = parseInt(line.slice(0, 3), 10);
+
+      if (state === 'AUTH') {
+        if (code === 250) {
+          state = 'ADD_ONION';
+          sock.write(`ADD_ONION NEW:ED25519-V3 Port=80,127.0.0.1:${APP_PORT}\r\n`);
+        } else {
+          log('✖', c.red, `Auth failed: ${line}`);
+          sock.destroy();
+          process.exit(1);
+        }
+
+      } else if (state === 'ADD_ONION') {
+        if (line.includes('ServiceID=')) {
+          const id = line.split('ServiceID=')[1].trim();
+          const onionAddr = `${id}.onion`;
+          state = 'DONE';
+
+          hr();
+          log('🌐', c.cyan, `${c.bold}Onion link is live!${c.reset}`);
+          console.log('');
+          console.log(`     ${c.green}${c.bold}http://${onionAddr}${c.reset}`);
+          console.log('');
+          info('Open in Tor Browser to visit your site.');
+          info('Link is ephemeral — changes on each restart.');
+          hr();
+          console.log('');
+
+          // Keep sock open — closing it would kill the hidden service
+          registerOnionAddress(onionAddr);
+
+        } else if (code >= 500) {
+          log('✖', c.red, `Failed to create service: ${line}`);
+          sock.destroy();
+          process.exit(1);
+        }
+      }
+    }
   });
 
-  probe.on('timeout', () => {
-    probe.removeAllListeners();
-    probe.destroy();
-    setTimeout(() => pollControlPort(attempts + 1), 2000);
+  // On error/timeout before connected: Tor not ready yet, retry after 2s
+  sock.on('timeout', () => {
+    sock.destroy(); // fires 'error' with ECONNRESET, caught below
+  });
+
+  sock.on('error', () => {
+    if (state === 'CONNECTING') {
+      // Tor not up yet — retry silently
+      setTimeout(() => connectAndCreateOnion(attempts + 1), 2000);
+    } else {
+      log('✖', c.red, 'Control socket error after connect — exiting.');
+      process.exit(1);
+    }
+  });
+
+  sock.on('close', () => {
+    // Socket closed after onion was created (Tor restarted?)
+    if (state === 'DONE') {
+      log('⚠', c.yellow, 'Control connection closed — hidden service may be down.');
+    }
   });
 }
 
@@ -148,7 +198,7 @@ function startLocalTor() {
       ready = true;
       log('✔', c.green, 'Tor bootstrapped!');
       console.log('');
-      createOnionService();
+      connectAndCreateOnion(0);
     }
   };
 
@@ -163,69 +213,6 @@ function startLocalTor() {
     log('✔', c.green, 'Done.');
     console.log('');
     process.exit(0);
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SHARED: create hidden service via raw Tor control protocol
-// ═══════════════════════════════════════════════════════════════════════════════
-function createOnionService() {
-  let state = 'AUTH';
-  let buf   = '';
-
-  const sock = new net.Socket();
-  sock.connect(TOR_CTRL_PORT, '127.0.0.1', () => {
-    sock.write('AUTHENTICATE\r\n');
-  });
-
-  sock.on('data', (chunk) => {
-    buf += chunk.toString();
-    const lines = buf.split('\r\n');
-    buf = lines.pop();
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      const code = parseInt(line.slice(0, 3), 10);
-
-      if (state === 'AUTH') {
-        if (code === 250) {
-          sock.write(`ADD_ONION NEW:ED25519-V3 Port=80,127.0.0.1:${APP_PORT}\r\n`);
-          state = 'ADD_ONION';
-        } else {
-          log('✖', c.red, `Auth failed: ${line}`);
-          process.exit(1);
-        }
-
-      } else if (state === 'ADD_ONION') {
-        if (line.includes('ServiceID=')) {
-          const id = line.split('ServiceID=')[1].trim();
-          const onionAddr = `${id}.onion`;
-          hr();
-          log('🌐', c.cyan, `${c.bold}Onion link is live!${c.reset}`);
-          console.log('');
-          console.log(`     ${c.green}${c.bold}http://${onionAddr}${c.reset}`);
-          console.log('');
-          info('Open in Tor Browser to visit your site.');
-          info('Link is ephemeral — changes on each restart.');
-          info('');
-          info('Press Ctrl+C to stop.');
-          hr();
-          console.log('');
-          state = 'DONE';
-          // Tell the Express server so /api/info shows the live address
-          registerOnionAddress(onionAddr);
-        } else if (code >= 500) {
-          log('✖', c.red, `Failed: ${line}`);
-          sock.destroy();
-          process.exit(1);
-        }
-      }
-    }
-  });
-
-  sock.on('error', (err) => {
-    log('✖', c.red, `Control socket error: ${err.message}`);
-    process.exit(1);
   });
 }
 
