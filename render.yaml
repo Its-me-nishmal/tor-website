@@ -1,11 +1,7 @@
 services:
   - type: web
     name: tor-hello-world
-    runtime: node
-    buildCommand: npm install
-    startCommand: npm start
+    runtime: docker
     envVars:
-      - key: PORT
-        value: 10000          # Render assigns this automatically; keep in sync
       - key: NODE_ENV
         value: production
