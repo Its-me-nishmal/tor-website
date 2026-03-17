@@ -66,33 +66,44 @@ if (DOCKER_MODE) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // DOCKER MODE: poll until Tor control port accepts connections
 // ═══════════════════════════════════════════════════════════════════════════════
+let _onionCreated = false; // one-shot guard
+
 function pollControlPort(attempts = 0) {
-  const MAX = 30; // 30 × 2s = 60s timeout
+  const MAX = 40; // 40 × 2s = 80s timeout
   if (attempts >= MAX) {
     log('✖', c.red, 'Timed out waiting for Tor to start.');
     process.exit(1);
   }
 
   const probe = new net.Socket();
-  probe.setTimeout(1000);
+  probe.setTimeout(1500);
 
   probe.connect(TOR_CTRL_PORT, '127.0.0.1', () => {
+    // Remove all listeners BEFORE destroying — otherwise destroy() fires 'error'
+    probe.removeAllListeners();
     probe.destroy();
+
+    if (_onionCreated) return; // already started, ignore duplicate callbacks
+    _onionCreated = true;
+
     log('✔', c.green, 'Tor is ready — creating hidden service…');
     console.log('');
     createOnionService();
   });
 
   probe.on('error', () => {
+    probe.removeAllListeners();
     probe.destroy();
     setTimeout(() => pollControlPort(attempts + 1), 2000);
   });
 
   probe.on('timeout', () => {
+    probe.removeAllListeners();
     probe.destroy();
     setTimeout(() => pollControlPort(attempts + 1), 2000);
   });
 }
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LOCAL MODE: spawn `tor` binary, watch for bootstrap, then create service
