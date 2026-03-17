@@ -1,39 +1,76 @@
 #!/bin/sh
-# ─── Docker startup: Tor + Express + Onion service ────────────────────────────
+# ─── Docker startup: Tor (HiddenService) + Express ────────────────────────────
 
-set -e
+PORT=${PORT:-3000}
+TOR_DATA=/tmp/tor-data
+HS_DIR=/tmp/tor-hidden-service
 
-DIM='\033[2m'
-BOLD='\033[1m'
-GREEN='\033[32m'
-MAGENTA='\033[35m'
-YELLOW='\033[33m'
-RESET='\033[0m'
+# ── Directories ────────────────────────────────────────────────────────────────
+mkdir -p "$TOR_DATA" "$HS_DIR"
+chmod 700 "$HS_DIR"
+
+# ── Write torrc ────────────────────────────────────────────────────────────────
+cat > /tmp/torrc << EOF
+DataDirectory $TOR_DATA
+HiddenServiceDir $HS_DIR
+HiddenServicePort 80 127.0.0.1:$PORT
+Log notice stdout
+SocksPort 0
+RunAsDaemon 0
+EOF
 
 echo ""
-echo "  ${DIM}──────────────────────────────────────────────────${RESET}"
-echo "  ${MAGENTA}${BOLD}🧅  Tor Hello World${RESET}"
-echo "  ${DIM}──────────────────────────────────────────────────${RESET}"
+echo "  ────────────────────────────────────────────────────"
+echo "  🧅  Tor Hello World — Docker"
+echo "  ────────────────────────────────────────────────────"
 echo ""
 
-# ── 1. Start Tor daemon ─────────────────────────────────────────────────────
-echo "  ${YELLOW}⏳  Starting Tor daemon...${RESET}"
-mkdir -p /tmp/tor-data
-tor \
-  --ControlPort 9051 \
-  --CookieAuthentication 0 \
-  --DataDirectory /tmp/tor-data \
-  --Log "notice stdout" \
-  --SocksPort 0 &
-TOR_PID=$!
-
-# ── 2. Start Express server ─────────────────────────────────────────────────
-echo "  ${GREEN}⚡  Starting Express server on port ${PORT:-3000}...${RESET}"
+# ── Start Express ──────────────────────────────────────────────────────────────
+echo "  ⚡  Starting Express on port $PORT..."
 node src/index.js &
 SERVER_PID=$!
 
-# ── 3. Run tor-proxy (connects once Tor is ready, prints .onion link) ────────
-TOR_PRESTARTED=1 node src/tor-proxy.js &
+# ── Start Tor ──────────────────────────────────────────────────────────────────
+echo "  ⏳  Starting Tor..."
+tor -f /tmp/torrc &
 
-# ── Keep container alive via Express process ─────────────────────────────────
+# ── Wait for Tor to write the hostname file ────────────────────────────────────
+echo "  ⌛  Waiting for onion address (up to 60s)..."
+i=0
+while [ ! -f "$HS_DIR/hostname" ]; do
+  sleep 1
+  i=$((i + 1))
+  if [ "$i" -ge 60 ]; then
+    echo "  ✖  Timeout — Tor did not produce a hostname."
+    exit 1
+  fi
+done
+
+ONION=$(cat "$HS_DIR/hostname")
+
+echo ""
+echo "  ────────────────────────────────────────────────────"
+echo "  🌐  Onion link is live!"
+echo ""
+echo "      http://$ONION"
+echo ""
+echo "  ────────────────────────────────────────────────────"
+echo ""
+
+# ── Register with Express so /api/info shows the address ──────────────────────
+sleep 2   # give Express a moment to be fully up
+node -e "
+const http = require('http');
+const body = JSON.stringify({ address: '$ONION' });
+const req = http.request({
+  host: '127.0.0.1', port: $PORT,
+  path: '/internal/onion', method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+}, () => { console.log('  ✔  Onion address registered with Express'); });
+req.on('error', () => {});
+req.write(body);
+req.end();
+"
+
+# ── Keep container alive ───────────────────────────────────────────────────────
 wait $SERVER_PID
